@@ -1,6 +1,6 @@
 import json
 import asyncio
-from aiogram import Bot, Dispatcher, F
+from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.client.default import DefaultBotProperties
@@ -12,6 +12,9 @@ dp = Dispatcher()
 
 POSTS_FILE = "posts.json"
 
+posts = {}
+upload_buffer = []
+
 
 def load_posts():
     try:
@@ -21,14 +24,15 @@ def load_posts():
         return {}
 
 
-def save_posts(data):
+def save_posts():
     with open(POSTS_FILE, "w") as f:
-        json.dump(data, f)
+        json.dump(posts, f)
 
 
 posts = load_posts()
 
 
+# старт
 @dp.message(Command("start"))
 async def start(message: Message):
 
@@ -40,72 +44,81 @@ async def start(message: Message):
 
         if post_id in posts:
 
-            data = posts[post_id]
-
-            if data["type"] == "photo":
-                await message.answer_photo(data["file_id"], caption=data.get("text"))
-
-            elif data["type"] == "video":
-                await message.answer_video(data["file_id"], caption=data.get("text"))
-
-            elif data["type"] == "voice":
-                await message.answer_voice(data["file_id"])
-
-            elif data["type"] == "video_note":
-                await message.answer_video_note(data["file_id"])
-
-            elif data["type"] == "document":
-                await message.answer_document(data["file_id"])
-
-            elif data["type"] == "text":
-                await message.answer(data["text"])
+            for msg in posts[post_id]:
+                await bot.copy_message(
+                    chat_id=message.chat.id,
+                    from_chat_id=msg["chat_id"],
+                    message_id=msg["message_id"]
+                )
 
         else:
-            await message.answer("Пост не найден")
-
-
-@dp.message(Command("admingetlink"))
-async def link(message: Message):
-
-    if not message.reply_to_message:
-        await message.reply("Ответь на пост")
-        return
-
-    msg = message.reply_to_message
-    post_id = str(len(posts) + 1)
-
-    data = {}
-
-    if msg.photo:
-        data = {"type": "photo", "file_id": msg.photo[-1].file_id, "text": msg.caption}
-
-    elif msg.video:
-        data = {"type": "video", "file_id": msg.video.file_id, "text": msg.caption}
-
-    elif msg.voice:
-        data = {"type": "voice", "file_id": msg.voice.file_id}
-
-    elif msg.video_note:
-        data = {"type": "video_note", "file_id": msg.video_note.file_id}
-
-    elif msg.document:
-        data = {"type": "document", "file_id": msg.document.file_id}
-
-    elif msg.text:
-        data = {"type": "text", "text": msg.text}
+            await message.answer("Файлы не найдены")
 
     else:
-        await message.reply("Тип не поддерживается")
+
+        await message.answer(
+            "📁 Добро пожаловать в piski files.\n\n"
+            "Этот бот позволяет получать доступ к сохранённым файлам по ссылкам."
+        )
+
+
+# начать загрузку
+@dp.message(Command("admingetlink"))
+async def admin_get(message: Message):
+
+    global upload_buffer
+    upload_buffer = []
+
+    await message.answer(
+        "📤 Ожидаю файлы.\n"
+        "Отправьте один или несколько файлов."
+    )
+
+
+# ловим файлы
+@dp.message()
+async def collect_files(message: Message):
+
+    global upload_buffer
+
+    if message.text and message.text.startswith("/"):
         return
 
-    posts[post_id] = data
-    save_posts(posts)
+    upload_buffer.append({
+        "chat_id": message.chat.id,
+        "message_id": message.message_id
+    })
+
+    await message.answer(
+        "Файл добавлен.\n"
+        "Когда закончите отправку используйте /adminmakelink"
+    )
+
+
+# создание ссылки
+@dp.message(Command("adminmakelink"))
+async def make_link(message: Message):
+
+    global upload_buffer
+
+    if not upload_buffer:
+        await message.answer("Нет файлов для создания ссылки")
+        return
+
+    post_id = str(len(posts) + 1)
+
+    posts[post_id] = upload_buffer
+    save_posts()
 
     bot_info = await bot.get_me()
 
     link = f"https://t.me/{bot_info.username}?start=post_{post_id}"
 
-    await message.reply(link)
+    upload_buffer = []
+
+    await message.answer(
+        f"✅ Ссылка создана:\n{link}"
+    )
 
 
 async def main():
