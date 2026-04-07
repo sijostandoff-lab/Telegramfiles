@@ -5,7 +5,7 @@ from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.client.default import DefaultBotProperties
 
-TOKEN = "8693534383:AAEM2Ql3WfX4iHrBOTAmBSKWNSpViYXuH2I"
+TOKEN = "8710821905:AAHUx471cvlfMUPj87K_R-zAsNX1IGX0lZE"
 
 bot = Bot(TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
 dp = Dispatcher()
