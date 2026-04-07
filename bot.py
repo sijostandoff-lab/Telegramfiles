@@ -1,6 +1,6 @@
 import json
 import asyncio
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.client.default import DefaultBotProperties
@@ -14,6 +14,7 @@ POSTS_FILE = "posts.json"
 
 posts = {}
 upload_buffer = []
+collect_mode = False
 
 
 def load_posts():
@@ -32,7 +33,7 @@ def save_posts():
 posts = load_posts()
 
 
-# старт
+# START
 @dp.message(Command("start"))
 async def start(message: Message):
 
@@ -58,28 +59,57 @@ async def start(message: Message):
 
         await message.answer(
             "📁 Добро пожаловать в piski files.\n\n"
-            "Этот бот позволяет получать доступ к сохранённым файлам по ссылкам."
+            "Этот бот используется для получения файлов по ссылкам."
         )
 
 
 # начать загрузку
 @dp.message(Command("admingetlink"))
-async def admin_get(message: Message):
+async def start_collect(message: Message):
 
-    global upload_buffer
+    global upload_buffer, collect_mode
+
     upload_buffer = []
+    collect_mode = True
 
     await message.answer(
         "📤 Ожидаю файлы.\n"
-        "Отправьте один или несколько файлов."
+        "Отправьте один или несколько сообщений."
     )
 
 
-# ловим файлы
+# создать ссылку
+@dp.message(Command("adminmakelink"))
+async def make_link(message: Message):
+
+    global upload_buffer, collect_mode
+
+    if not upload_buffer:
+        await message.answer("❌ Вы не отправили файлы")
+        return
+
+    post_id = str(len(posts) + 1)
+
+    posts[post_id] = upload_buffer
+    save_posts()
+
+    bot_info = await bot.get_me()
+    link = f"https://t.me/{bot_info.username}?start=post_{post_id}"
+
+    upload_buffer = []
+    collect_mode = False
+
+    await message.answer(f"✅ Ссылка создана:\n{link}")
+
+
+# сбор файлов
 @dp.message()
 async def collect_files(message: Message):
 
-    global upload_buffer
+    global upload_buffer, collect_mode
+
+    if not collect_mode:
+        return
 
     if message.text and message.text.startswith("/"):
         return
@@ -90,34 +120,8 @@ async def collect_files(message: Message):
     })
 
     await message.answer(
-        "Файл добавлен.\n"
+        "📦 Файл добавлен.\n"
         "Когда закончите отправку используйте /adminmakelink"
-    )
-
-
-# создание ссылки
-@dp.message(Command("adminmakelink"))
-async def make_link(message: Message):
-
-    global upload_buffer
-
-    if not upload_buffer:
-        await message.answer("Нет файлов для создания ссылки")
-        return
-
-    post_id = str(len(posts) + 1)
-
-    posts[post_id] = upload_buffer
-    save_posts()
-
-    bot_info = await bot.get_me()
-
-    link = f"https://t.me/{bot_info.username}?start=post_{post_id}"
-
-    upload_buffer = []
-
-    await message.answer(
-        f"✅ Ссылка создана:\n{link}"
     )
 
 
