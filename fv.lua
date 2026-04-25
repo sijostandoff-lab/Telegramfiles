@@ -17,7 +17,7 @@ local upHeld = false
 local downHeld = false
 
 local LOCKED_HEIGHT = 224
-local UNLOCKED_HEIGHT = 388
+local UNLOCKED_HEIGHT = 430
 local currentExpandedHeight = LOCKED_HEIGHT
 
 local character, humanoid, hrp
@@ -44,6 +44,7 @@ local gui = Instance.new("ScreenGui")
 gui.Name = "vzzoxFlyV1"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
+gui.DisplayOrder = 100
 gui.Parent = player:WaitForChild("PlayerGui")
 
 local function corner(obj, r)
@@ -85,6 +86,7 @@ local function mkLabel(parent, text, size, bold)
 	t.Font = bold and Enum.Font.GothamBold or Enum.Font.Gotham
 	t.TextSize = size
 	t.TextXAlignment = Enum.TextXAlignment.Left
+	t.TextYAlignment = Enum.TextYAlignment.Center
 	t.Parent = parent
 	return t
 end
@@ -146,27 +148,6 @@ local function trySetClipboard(text)
 		end
 	end)
 	return ok
-end
-
-local function openDiscord()
-	local opened = false
-	pcall(function()
-		GuiService:OpenBrowserWindow(DISCORD_URL)
-		opened = true
-	end)
-
-	if opened then
-		notify("Discord", "Invite opened")
-		return true
-	end
-
-	if trySetClipboard(DISCORD_URL) then
-		notify("Discord", "Browser failed, invite copied")
-		return false
-	end
-
-	notify("Discord", "Browser failed, copy link manually")
-	return false
 end
 
 local function stopFly()
@@ -269,18 +250,6 @@ local function startFly()
 	end)
 end
 
-local function toggleFly()
-	if not isUnlocked then
-		return
-	end
-
-	if isFlying then
-		stopFly()
-	else
-		startFly()
-	end
-end
-
 local main = Instance.new("Frame")
 main.Name = "Main"
 main.Size = UDim2.fromOffset(360, LOCKED_HEIGHT)
@@ -351,76 +320,91 @@ discordBtn.Size = UDim2.new(1, -36, 0, 44)
 discordBtn.Position = UDim2.fromOffset(18, 114)
 applyHover(discordBtn)
 
-local discordCopy = Instance.new("TextBox")
-discordCopy.Name = "DiscordCopy"
-discordCopy.Text = DISCORD_URL
-discordCopy.ClearTextOnFocus = false
-discordCopy.Visible = false
-discordCopy.TextEditable = true
-discordCopy.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
-discordCopy.TextColor3 = Color3.fromRGB(220, 220, 235)
-discordCopy.PlaceholderColor3 = Color3.fromRGB(150, 150, 165)
-discordCopy.Font = Enum.Font.Gotham
-discordCopy.TextSize = 14
-discordCopy.Size = UDim2.new(1, -36, 0, 36)
-discordCopy.Position = UDim2.fromOffset(18, 166)
-discordCopy.Parent = content
-corner(discordCopy, 12)
-stroke(discordCopy, 0.7, Color3.fromRGB(100, 100, 120))
+local invitePanel = Instance.new("Frame")
+invitePanel.Name = "InvitePanel"
+invitePanel.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+invitePanel.Size = UDim2.new(1, -36, 0, 38)
+invitePanel.Position = UDim2.fromOffset(18, 164)
+invitePanel.Visible = false
+invitePanel.Parent = content
+corner(invitePanel, 12)
+stroke(invitePanel, 0.7, Color3.fromRGB(100, 100, 120))
+gradient(invitePanel, Color3.fromRGB(30, 30, 40), Color3.fromRGB(16, 16, 22), 0)
 
-local copyBtn = mkButton(content, "COPY LINK")
-copyBtn.Size = UDim2.new(0.5, -24, 0, 36)
-copyBtn.Position = UDim2.fromOffset(18, 210)
-copyBtn.Visible = false
-applyHover(copyBtn)
+local inviteText = Instance.new("TextBox")
+inviteText.Name = "InviteText"
+inviteText.Text = DISCORD_URL
+inviteText.ClearTextOnFocus = false
+inviteText.TextEditable = true
+inviteText.BackgroundTransparency = 1
+inviteText.TextColor3 = Color3.fromRGB(220, 220, 235)
+inviteText.PlaceholderColor3 = Color3.fromRGB(150, 150, 165)
+inviteText.Font = Enum.Font.Gotham
+inviteText.TextSize = 13
+inviteText.TextXAlignment = Enum.TextXAlignment.Left
+inviteText.Size = UDim2.new(1, -108, 1, 0)
+inviteText.Position = UDim2.fromOffset(12, 0)
+inviteText.Parent = invitePanel
+
+local inviteCopy = mkButton(invitePanel, "COPY")
+inviteCopy.Size = UDim2.fromOffset(50, 28)
+inviteCopy.Position = UDim2.new(1, -92, 0, 5)
+inviteCopy.TextSize = 12
+applyHover(inviteCopy)
+
+local inviteClose = mkButton(invitePanel, "×")
+inviteClose.Size = UDim2.fromOffset(28, 28)
+inviteClose.Position = UDim2.new(1, -36, 0, 5)
+inviteClose.TextSize = 20
+applyHover(inviteClose)
 
 local status = mkLabel(content, "Locked", 13, true)
 status.TextColor3 = Color3.fromRGB(255, 110, 110)
-status.Position = UDim2.fromOffset(18, 166)
+status.Position = UDim2.fromOffset(18, 210)
 status.Size = UDim2.new(1, -36, 0, 18)
 
 local flyBtn = mkButton(content, "FLY: OFF")
 flyBtn.Size = UDim2.new(0.5, -24, 0, 42)
-flyBtn.Position = UDim2.fromOffset(18, 194)
+flyBtn.Position = UDim2.fromOffset(18, 236)
 flyBtn.Visible = false
 applyHover(flyBtn)
 
 local upBtn = mkButton(content, "UP")
 upBtn.Size = UDim2.new(0.22, -6, 0, 42)
-upBtn.Position = UDim2.fromOffset(168, 194)
+upBtn.Position = UDim2.fromOffset(168, 236)
 upBtn.Visible = false
 
 local downBtn = mkButton(content, "DOWN")
 downBtn.Size = UDim2.new(0.22, -6, 0, 42)
-downBtn.Position = UDim2.fromOffset(242, 194)
+downBtn.Position = UDim2.fromOffset(242, 236)
 downBtn.Visible = false
 
 local info = mkLabel(content, "F = toggle flight | Space = up | Ctrl = down", 12, false)
 info.TextColor3 = Color3.fromRGB(170, 170, 185)
-info.Position = UDim2.fromOffset(18, 242)
+info.Position = UDim2.fromOffset(18, 284)
 info.Size = UDim2.new(1, -36, 0, 16)
 info.Visible = false
 
 local speedLabel = mkLabel(content, "Speed", 12, true)
 speedLabel.TextColor3 = Color3.fromRGB(210, 200, 230)
-speedLabel.Position = UDim2.fromOffset(18, 266)
+speedLabel.Position = UDim2.fromOffset(18, 308)
 speedLabel.Size = UDim2.new(1, -36, 0, 16)
 speedLabel.Visible = false
 
 local speedMinus = mkButton(content, "-")
 speedMinus.Size = UDim2.fromOffset(38, 34)
-speedMinus.Position = UDim2.fromOffset(18, 288)
+speedMinus.Position = UDim2.fromOffset(18, 330)
 speedMinus.Visible = false
 
 local speedValue = mkLabel(content, tostring(flySpeed), 16, true)
 speedValue.TextXAlignment = Enum.TextXAlignment.Center
-speedValue.Position = UDim2.fromOffset(68, 288)
+speedValue.Position = UDim2.fromOffset(68, 330)
 speedValue.Size = UDim2.fromOffset(60, 34)
 speedValue.Visible = false
 
 local speedPlus = mkButton(content, "+")
 speedPlus.Size = UDim2.fromOffset(38, 34)
-speedPlus.Position = UDim2.fromOffset(138, 288)
+speedPlus.Position = UDim2.fromOffset(138, 330)
 speedPlus.Visible = false
 
 local hint = mkLabel(content, "Drag window from the top bar", 11, false)
@@ -435,11 +419,17 @@ local function setStatus(text, color)
 	status.TextColor3 = color
 end
 
+local function hideInvitePanel()
+	invitePanel.Visible = false
+end
+
 local function setExpandedHeight()
 	currentExpandedHeight = isUnlocked and UNLOCKED_HEIGHT or LOCKED_HEIGHT
 end
 
 local function setUnlockedUI()
+	hideInvitePanel()
+
 	flyBtn.Visible = true
 	upBtn.Visible = true
 	downBtn.Visible = true
@@ -458,13 +448,40 @@ local function setUnlockedUI()
 	setStatus("Unlocked", Color3.fromRGB(110, 255, 160))
 end
 
-local function showDiscordFallback()
-	discordCopy.Visible = true
-	copyBtn.Visible = true
-	if not minimized then
-		setExpandedHeight()
-		tween(main, {Size = UDim2.fromOffset(360, currentExpandedHeight)}, 0.18)
+local function showInvitePanel()
+	if isUnlocked then
+		return
 	end
+	invitePanel.Visible = true
+	if not minimized then
+		tween(main, {Size = UDim2.fromOffset(360, LOCKED_HEIGHT + 54)}, 0.16)
+	end
+end
+
+local function openDiscord()
+	local opened = false
+
+	pcall(function()
+		GuiService:OpenBrowserWindow(DISCORD_URL)
+		opened = true
+	end)
+
+	if opened then
+		notify("Discord", "Invite opened")
+		hideInvitePanel()
+		return
+	end
+
+	if trySetClipboard(DISCORD_URL) then
+		notify("Discord", "Browser failed, invite copied")
+		showInvitePanel()
+		inviteCopy.Text = "COPIED"
+		return
+	end
+
+	notify("Discord", "Browser failed, copy manually")
+	showInvitePanel()
+	inviteCopy.Text = "COPY"
 end
 
 unlockBtn.MouseButton1Click:Connect(function()
@@ -473,38 +490,51 @@ unlockBtn.MouseButton1Click:Connect(function()
 		setUnlockedUI()
 		notify("vzzox fly v1", "Key accepted")
 	else
-		setStatus("Wrong key", Color3.fromRGB(255, 110, 110))
+		setStatus("Locked", Color3.fromRGB(255, 110, 110))
+		notify("vzzox fly v1", "Wrong key")
 	end
 end)
 
 discordBtn.MouseButton1Click:Connect(function()
-	local opened = openDiscord()
-	if not opened then
-		showDiscordFallback()
-		copyBtn.Text = "COPY LINK"
-	end
+	openDiscord()
 end)
 
-copyBtn.MouseButton1Click:Connect(function()
+inviteCopy.MouseButton1Click:Connect(function()
 	local copied = trySetClipboard(DISCORD_URL)
 	if copied then
-		copyBtn.Text = "COPIED"
+		inviteCopy.Text = "COPIED"
 		setStatus("Invite copied", Color3.fromRGB(110, 255, 160))
 		notify("Discord", "Invite copied to clipboard")
 	else
-		discordCopy.Visible = true
-		discordCopy.Text = DISCORD_URL
-		discordCopy:CaptureFocus()
-		discordCopy.CursorPosition = #DISCORD_URL + 1
-		discordCopy.SelectionStart = 1
-		copyBtn.Text = "SELECT LINK"
-		setStatus("Copy manually", Color3.fromRGB(255, 220, 120))
+		inviteText:CaptureFocus()
+		inviteText.CursorPosition = #DISCORD_URL + 1
+		inviteText.SelectionStart = 1
+		inviteCopy.Text = "SELECT"
+		setStatus("Clipboard unavailable", Color3.fromRGB(255, 220, 120))
 		notify("Discord", "Clipboard unavailable")
 	end
 end)
 
+inviteClose.MouseButton1Click:Connect(function()
+	hideInvitePanel()
+	if not minimized then
+		if isUnlocked then
+			tween(main, {Size = UDim2.fromOffset(360, UNLOCKED_HEIGHT)}, 0.16)
+		else
+			tween(main, {Size = UDim2.fromOffset(360, LOCKED_HEIGHT)}, 0.16)
+		end
+	end
+end)
+
 flyBtn.MouseButton1Click:Connect(function()
-	toggleFly()
+	if not isUnlocked then
+		return
+	end
+	if isFlying then
+		stopFly()
+	else
+		startFly()
+	end
 	flyBtn.Text = isFlying and "FLY: ON" or "FLY: OFF"
 end)
 
@@ -569,7 +599,11 @@ UIS.InputBegan:Connect(function(input, processed)
 
 	if input.KeyCode == Enum.KeyCode.F then
 		if isUnlocked then
-			toggleFly()
+			if isFlying then
+				stopFly()
+			else
+				startFly()
+			end
 			updateFlyButton()
 		end
 	elseif input.KeyCode == Enum.KeyCode.Space then
@@ -633,7 +667,7 @@ do
 	end)
 end
 
--- Появление
+-- initial animation
 main.BackgroundTransparency = 1
 for _, v in ipairs(main:GetDescendants()) do
 	if v:IsA("TextLabel") or v:IsA("TextButton") or v:IsA("TextBox") then
