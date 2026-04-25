@@ -254,11 +254,11 @@ topBar.Size = UDim2.new(1, 0, 0, 48)
 topBar.BackgroundTransparency = 1
 topBar.Parent = main
 
-local title = mkLabel(topBar, "vzzox fly v1", 22, true)
+local title = mkLabel(topBar, "vzzox fly", 22, true)
 title.Position = UDim2.fromOffset(18, 10)
 title.Size = UDim2.new(1, -120, 0, 24)
 
-local tag = mkLabel(topBar, "PC + Mobile | Premium UI", 12, false)
+local tag = mkLabel(topBar, "anti ban | made by vzzox", 12, false)
 tag.TextColor3 = Color3.fromRGB(185, 175, 205)
 tag.Position = UDim2.fromOffset(18, 30)
 tag.Size = UDim2.new(1, -120, 0, 16)
@@ -352,7 +352,7 @@ speedPlus.Size = UDim2.fromOffset(38, 34)
 speedPlus.Position = UDim2.fromOffset(138, 236)
 speedPlus.Visible = false
 
-local hint = mkLabel(content, "Drag window from the top bar", 11, false)
+local hint = mkLabel(content, "pls follow me rblx: sempaikalos", 11, false)
 hint.TextColor3 = Color3.fromRGB(160, 160, 180)
 hint.TextXAlignment = Enum.TextXAlignment.Right
 hint.Position = UDim2.new(1, -170, 1, -22)
