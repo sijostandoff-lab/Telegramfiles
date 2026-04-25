@@ -171,12 +171,31 @@ local function startFly()
 		local cam = workspace.CurrentCamera
 		if not cam then return end
 
-		local move = humanoid.MoveDirection
-		local forward = cam.CFrame.LookVector
-		local right = cam.CFrame.RightVector
+		local direction = Vector3.zero
 
-		local flat = (forward * move.Z) + (right * move.X)
-		flat = Vector3.new(flat.X, 0, flat.Z)
+if UIS:IsKeyDown(Enum.KeyCode.W) then
+	direction += cam.CFrame.LookVector
+end
+if UIS:IsKeyDown(Enum.KeyCode.S) then
+	direction -= cam.CFrame.LookVector
+end
+if UIS:IsKeyDown(Enum.KeyCode.A) then
+	direction -= cam.CFrame.RightVector
+end
+if UIS:IsKeyDown(Enum.KeyCode.D) then
+	direction += cam.CFrame.RightVector
+end
+
+-- мобилка (джойстик)
+local move = humanoid.MoveDirection
+direction += Vector3.new(move.X, 0, move.Z)
+
+direction = Vector3.new(direction.X, 0, direction.Z)
+
+local vel = Vector3.zero
+if direction.Magnitude > 0 then
+	vel += direction.Unit * flySpeed
+end
 
 		local vel = Vector3.zero
 		if flat.Magnitude > 0.05 then
